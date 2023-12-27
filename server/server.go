@@ -12,12 +12,19 @@ type Server struct {
 	port    string
 }
 
-func (server *Server) NewServer(name string, ip string, port string) *Server {
-	return &Server{nil, name, ip, port}
+func (server *Server) NewServer(name string, ip string, port string) {
+	server.name = name
+	server.ip = ip
+	server.name = name
+	server.port = port
+
 }
 
 func (server *Server) Start() {
 	server.handler = &HttpHandler{server.name}
-	http.ListenAndServe(fmt.Sprintf("%s:%s", server.ip, server.port), server.handler)
+	fmt.Printf("Starting server at port %s and address %s\n", server.port, server.ip)
+	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", server.ip, server.port), server.handler); err != nil {
+		fmt.Println(err)
+	}
 
 }
