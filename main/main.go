@@ -1,15 +1,14 @@
-package LoadBalancer
+package main
 
 import (
 	"LoadBalancer/server"
-	"net/http"
 )
 
 func main() {
 
 	//create a new handler
-	handler := server.HttpHandler{}
+	server := new(server.Server)
+	server.NewServer("S1", "127.0.0.1", "8080")
+	server.Start()
 
-	//listen and serve
-	http.ListenAndServe(":9000", handler)
 }
