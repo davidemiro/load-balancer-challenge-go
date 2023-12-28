@@ -1,10 +1,12 @@
 package loadBalancer
 
-type LoadBalancer struct {
-	next          int
-	servers_addrs []string
+import "net/http"
+
+type LoadBalancer interface {
+	forward(balancer LoadBalancer) (w http.ResponseWriter, req *http.Request)
 }
 
-func (server *LoadBalancer) NewLoadBalancer(next int, servers_addrs []string) {
-
+type LoadBalancerError struct {
+	Code    int
+	Message string
 }

@@ -13,12 +13,12 @@ func (httpHandler *HttpHandler) GetName() string {
 	return httpHandler.name
 }
 
-func (HttpHandler *HttpHandler) SetName(newName string) {
-	HttpHandler.name = newName
+func (httpHandler *HttpHandler) SetName(newName string) {
+	httpHandler.name = newName
 }
 
 // implement `ServeHTTP` method on `HttpHandler` struct
-func (h HttpHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (httpHandler *HttpHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// create response binary data
-	fmt.Fprintf(w, "Hello World!\nThe server %s answer\n", h.name)
+	fmt.Fprintf(w, "Hello World!\nThe server %s answer\n", httpHandler.name)
 }

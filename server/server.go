@@ -15,7 +15,6 @@ type Server struct {
 func (server *Server) NewServer(name string, ip string, port string) {
 	server.name = name
 	server.ip = ip
-	server.name = name
 	server.port = port
 
 }
