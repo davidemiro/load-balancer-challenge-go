@@ -16,7 +16,7 @@ func main() {
 
 	go StartServer("S1", "127.0.0.1", "8080")
 
-	go StartServer("S2", "127.0.0.2", "8081")
+	go StartServer("S2", "127.0.0.2", "8080")
 
 	select {}
 
