@@ -87,3 +87,7 @@ func (LoadBalancerRR *LoadBalancerRoundRobin) ServeHTTP(w http.ResponseWriter, r
 	}
 
 }
+
+func (LoadBalancerRR *LoadBalancerRoundRobin) Start() {
+	LoadBalancerRR.server.Start()
+}
