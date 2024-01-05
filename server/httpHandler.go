@@ -9,6 +9,10 @@ type HttpHandler struct {
 	name string
 }
 
+func (httpHandler *HttpHandler) NewHttpHandler(name string) {
+	httpHandler.name = name
+}
+
 func (httpHandler *HttpHandler) GetName() string {
 	return httpHandler.name
 }

@@ -7,7 +7,10 @@ import (
 )
 
 type LoadBalancerRoundRobin struct {
-	server  server.Server
+	handler *server.HttpHandler
+	ip      string
+	port    string
+	name    string
 	next    int
 	addrs   []string
 	n_addrs int
@@ -15,7 +18,8 @@ type LoadBalancerRoundRobin struct {
 
 func (loadBalancerRR *LoadBalancerRoundRobin) NewLoadBalancer(name string, ip string, port string) {
 	loadBalancerRR.next = 0
-	loadBalancerRR.server.NewServer(name, ip, port)
+	loadBalancerRR.ip = ip
+	loadBalancerRR.port = port
 
 }
 
@@ -89,5 +93,11 @@ func (LoadBalancerRR *LoadBalancerRoundRobin) ServeHTTP(w http.ResponseWriter, r
 }
 
 func (LoadBalancerRR *LoadBalancerRoundRobin) Start() {
-	LoadBalancerRR.server.Start()
+	LoadBalancerRR.handler = new(server.HttpHandler)
+	LoadBalancerRR.handler.NewHttpHandler(LoadBalancerRR.name)
+	fmt.Printf("Starting server at port %s and address %s\n", LoadBalancerRR.port, LoadBalancerRR.ip)
+	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", LoadBalancerRR.ip, LoadBalancerRR.port), LoadBalancerRR.handler); err != nil {
+		fmt.Println(err)
+	}
+
 }
