@@ -1,13 +1,15 @@
 package loadBalancer
 
 import (
-	"LoadBalancer/server"
 	"fmt"
 	"net/http"
 )
 
+type httpHandler struct {
+	loadbalancer *LoadBalancerRoundRobin
+}
+
 type LoadBalancerRoundRobin struct {
-	handler *server.HttpHandler
 	ip      string
 	port    string
 	name    string
@@ -20,6 +22,7 @@ func (loadBalancerRR *LoadBalancerRoundRobin) NewLoadBalancer(name string, ip st
 	loadBalancerRR.next = 0
 	loadBalancerRR.ip = ip
 	loadBalancerRR.port = port
+	loadBalancerRR.name = name
 
 }
 
@@ -46,6 +49,7 @@ func (loadBalancerRR *LoadBalancerRoundRobin) forward(w http.ResponseWriter, req
 
 	// Copy headers from the original request
 	for key, value := range req.Header {
+
 		newReq.Header.Set(key, value[0])
 	}
 
@@ -66,8 +70,8 @@ func (loadBalancerRR *LoadBalancerRoundRobin) forward(w http.ResponseWriter, req
 
 }
 
-func (LoadBalancerRR *LoadBalancerRoundRobin) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	resp := LoadBalancerRR.forward(w, req)
+func (httpHandler *httpHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	resp := httpHandler.loadbalancer.forward(w, req)
 
 	if resp == nil {
 		return
@@ -92,11 +96,11 @@ func (LoadBalancerRR *LoadBalancerRoundRobin) ServeHTTP(w http.ResponseWriter, r
 
 }
 
-func (LoadBalancerRR *LoadBalancerRoundRobin) Start() {
-	LoadBalancerRR.handler = new(server.HttpHandler)
-	LoadBalancerRR.handler.NewHttpHandler(LoadBalancerRR.name)
-	fmt.Printf("Starting server at port %s and address %s\n", LoadBalancerRR.port, LoadBalancerRR.ip)
-	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", LoadBalancerRR.ip, LoadBalancerRR.port), LoadBalancerRR.handler); err != nil {
+func (loadBalancerRR *LoadBalancerRoundRobin) Start() {
+	handler := new(httpHandler)
+	handler.loadbalancer = loadBalancerRR
+	fmt.Printf("Starting server %s at port %s and address %s\n", loadBalancerRR.name, loadBalancerRR.port, loadBalancerRR.ip)
+	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", loadBalancerRR.ip, loadBalancerRR.port), handler); err != nil {
 		fmt.Println(err)
 	}
 

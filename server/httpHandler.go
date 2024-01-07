@@ -24,5 +24,6 @@ func (httpHandler *HttpHandler) SetName(newName string) {
 // implement `ServeHTTP` method on `HttpHandler` struct
 func (httpHandler *HttpHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// create response binary data
+	fmt.Println(httpHandler.name)
 	fmt.Fprintf(w, "Hello World!\nThe server %s answer\n", httpHandler.name)
 }
