@@ -18,30 +18,31 @@ type LoadBalancerRoundRobin struct {
 	n_addrs int
 }
 
-func (loadBalancerRR *LoadBalancerRoundRobin) NewLoadBalancer(name string, ip string, port string) {
-	loadBalancerRR.next = 0
-	loadBalancerRR.ip = ip
-	loadBalancerRR.port = port
-	loadBalancerRR.name = name
+func (loadbalancer *LoadBalancerRoundRobin) NewLoadBalancer(name string, ip string, port string) {
+	loadbalancer.next = 0
+	loadbalancer.ip = ip
+	loadbalancer.port = port
+	loadbalancer.name = name
 
 }
 
-func (loadBalancerRR *LoadBalancerRoundRobin) AddNode(addr string) {
-	loadBalancerRR.addrs = append(loadBalancerRR.addrs, addr)
-	loadBalancerRR.n_addrs += 1
+func (loadbalancer *LoadBalancerRoundRobin) AddNode(addr string) {
+	//TODO: add liveness probe to check addr correctness
+	loadbalancer.addrs = append(loadbalancer.addrs, addr)
+	loadbalancer.n_addrs += 1
 }
 
-func (loadBalancerRR *LoadBalancerRoundRobin) forward(w http.ResponseWriter, req *http.Request) *http.Response {
+func (loadbalancer *LoadBalancerRoundRobin) forward(w http.ResponseWriter, req *http.Request) *http.Response {
 
 	// Get the addr of the node to forward the request
-	if len(loadBalancerRR.addrs) == 0 {
+	if len(loadbalancer.addrs) == 0 {
 		fmt.Println("Internal Server Error.\n No backend nodes available.\n")
 		return nil
 	}
 
 	//Implementation of Round Robin stragegy
-	selected_addr := loadBalancerRR.addrs[loadBalancerRR.next]
-	loadBalancerRR.next = (loadBalancerRR.next + 1) % loadBalancerRR.n_addrs
+	selected_addr := loadbalancer.addrs[loadbalancer.next]
+	loadbalancer.next = (loadbalancer.next + 1) % loadbalancer.n_addrs
 
 	// Define the new connection to the backend
 	newReq, err := http.NewRequest(req.Method, selected_addr, req.Body)
@@ -96,11 +97,11 @@ func (httpHandler *httpHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 
 }
 
-func (loadBalancerRR *LoadBalancerRoundRobin) Start() {
+func (loadbalancer *LoadBalancerRoundRobin) Start() {
 	handler := new(httpHandler)
-	handler.loadbalancer = loadBalancerRR
-	fmt.Printf("Starting server %s at port %s and address %s\n", loadBalancerRR.name, loadBalancerRR.port, loadBalancerRR.ip)
-	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", loadBalancerRR.ip, loadBalancerRR.port), handler); err != nil {
+	handler.loadbalancer = loadbalancer
+	fmt.Printf("Starting server %s at port %s and address %s\n", loadbalancer.name, loadbalancer.port, loadbalancer.ip)
+	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", loadbalancer.ip, loadbalancer.port), handler); err != nil {
 		fmt.Println(err)
 	}
 
