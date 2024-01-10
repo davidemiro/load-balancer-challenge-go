@@ -28,6 +28,9 @@ func (loadbalancer *LoadBalancerRoundRobin) NewLoadBalancer(name string, ip stri
 
 func (loadbalancer *LoadBalancerRoundRobin) AddNode(addr string) {
 	//TODO: add liveness probe to check addr correctness
+	if livenessProbe(addr) {
+		//return error("Connection error")
+	}
 	loadbalancer.addrs = append(loadbalancer.addrs, addr)
 	loadbalancer.n_addrs += 1
 }
@@ -68,6 +71,11 @@ func (loadbalancer *LoadBalancerRoundRobin) forward(w http.ResponseWriter, req *
 	defer nodeResp.Body.Close()
 
 	return nodeResp
+
+}
+
+func livenessProbe(addr string) bool {
+	return true
 
 }
 
