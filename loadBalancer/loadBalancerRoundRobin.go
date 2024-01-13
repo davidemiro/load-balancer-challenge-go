@@ -2,12 +2,12 @@ package loadBalancer
 
 import (
 	"fmt"
+	"net"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"time"
 )
-
-type httpHandler struct {
-	loadbalancer *LoadBalancerRoundRobin
-}
 
 type LoadBalancerRoundRobin struct {
 	ip      string
@@ -26,91 +26,61 @@ func (loadbalancer *LoadBalancerRoundRobin) NewLoadBalancer(name string, ip stri
 
 }
 
-func (loadbalancer *LoadBalancerRoundRobin) AddNode(addr string) {
-	//TODO: add liveness probe to check addr correctness
-	if livenessProbe(addr) {
-		//return error("Connection error")
+func (loadbalancer *LoadBalancerRoundRobin) AddNode(addr string) *LoadBalancerError {
+	if !livenessProbe(addr) {
+		return &LoadBalancerError{500, "Connection error"}
 	}
 	loadbalancer.addrs = append(loadbalancer.addrs, addr)
 	loadbalancer.n_addrs += 1
-}
 
-func (loadbalancer *LoadBalancerRoundRobin) forward(w http.ResponseWriter, req *http.Request) *http.Response {
-
-	// Get the addr of the node to forward the request
-	if len(loadbalancer.addrs) == 0 {
-		fmt.Println("Internal Server Error.\n No backend nodes available.\n")
-		return nil
-	}
-
-	//Implementation of Round Robin stragegy
-	selected_addr := loadbalancer.addrs[loadbalancer.next]
-	loadbalancer.next = (loadbalancer.next + 1) % loadbalancer.n_addrs
-
-	// Define the new connection to the backend
-	newReq, err := http.NewRequest(req.Method, selected_addr, req.Body)
-	fmt.Print(err)
-
-	// Copy headers from the original request
-	for key, value := range req.Header {
-
-		newReq.Header.Set(key, value[0])
-	}
-
-	// Send the cloned request
-	client := &http.Client{}
-	nodeResp, err := client.Do(newReq)
-
-	defer nodeResp.Body.Close()
-
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-
-	defer nodeResp.Body.Close()
-
-	return nodeResp
+	return nil
 
 }
 
 func livenessProbe(addr string) bool {
+
+	// Use DialTimeout to set a timeout for the connection attempt
+	conn, err := net.DialTimeout("tcp", addr, 5*time.Second)
+	if err != nil {
+		return false
+	}
+
+	// Close the connection after establishing it
+	defer conn.Close()
+
+	fmt.Printf("Successfully connected to %s\n", addr)
 	return true
 
 }
 
-func (httpHandler *httpHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	resp := httpHandler.loadbalancer.forward(w, req)
-
-	if resp == nil {
-		return
-	}
-
-	// Copy headers from the original request
-	for key, value := range req.Header {
-		resp.Header.Set(key, value[0])
-	}
-
-	// Set the status code for the original response
-	w.WriteHeader(resp.StatusCode)
-
-	// Write the response body to the original client
-	var bytes []byte
-	resp.Body.Read(bytes)
-	_, err := w.Write(bytes)
-
-	if err != nil {
-		fmt.Print(err)
-	}
-
-}
-
 func (loadbalancer *LoadBalancerRoundRobin) Start() {
-	handler := new(httpHandler)
-	handler.loadbalancer = loadbalancer
-	fmt.Printf("Starting server %s at port %s and address %s\n", loadbalancer.name, loadbalancer.port, loadbalancer.ip)
-	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", loadbalancer.ip, loadbalancer.port), handler); err != nil {
-		fmt.Println(err)
+
+	// Create a handler function that serves as the entry point for incoming requests
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// Modify the request before it is sent to the destination server if needed
+		// For example, you might want to change headers or add authentication
+
+		//Implementation of Round Robin stragegy
+		selected_addr := loadbalancer.addrs[loadbalancer.next]
+		loadbalancer.next = (loadbalancer.next + 1) % loadbalancer.n_addrs
+
+		fmt.Println("Selected address " + selected_addr)
+
+		targetURL, error := url.Parse("http://" + selected_addr)
+		if error != nil {
+			fmt.Println("Error " + error.Error())
+		}
+
+		// Create a reverse proxy
+		proxy := httputil.NewSingleHostReverseProxy(targetURL)
+
+		// Forward the request to the target server
+		proxy.ServeHTTP(w, r)
+	})
+
+	// Start the HTTP server on a specific port
+	if err := http.ListenAndServe(loadbalancer.ip+":"+loadbalancer.port, nil); err != nil {
+		panic(err)
 	}
 
 }

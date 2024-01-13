@@ -1,9 +1,7 @@
 package loadBalancer
 
-import "net/http"
-
 type LoadBalancer interface {
-	forward(balancer LoadBalancer) (w http.ResponseWriter, req *http.Request)
+	Start(balancer LoadBalancer)
 }
 
 type LoadBalancerError struct {
