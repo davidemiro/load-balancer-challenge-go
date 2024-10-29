@@ -3,9 +3,6 @@ package loadBalancer
 import (
 	"log"
 	"net"
-	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"time"
 )
 
@@ -38,6 +35,14 @@ func (loadbalancer *LoadBalancerRoundRobin) AddNode(addr string) *LoadBalancerEr
 
 }
 
+func (loadbalancer *LoadBalancerRoundRobin) Forward(conn net.Conn) error {
+	return nil
+}
+
+func (loadbalancer *LoadBalancerRoundRobin) Backward(addr string) error {
+	return nil
+}
+
 func livenessProbe(addr string) bool {
 
 	// Use DialTimeout to set a timeout for the connection attempt
@@ -57,33 +62,16 @@ func livenessProbe(addr string) bool {
 
 func (loadbalancer *LoadBalancerRoundRobin) Start() {
 
-	// Create a handler function that serves as the entry point for incoming requests
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Modify the request before it is sent to the destination server if needed
-		// For example, you might want to change headers or add authentication
-
-		//Implementation of Round Robin stragegy
-		selected_addr := loadbalancer.addrs[loadbalancer.next]
-		loadbalancer.next = (loadbalancer.next + 1) % loadbalancer.n_addrs
-
-		log.Println("Selected address " + selected_addr)
-
-		targetURL, error := url.Parse("http://" + selected_addr)
-		if error != nil {
-			log.Fatal(error)
-		}
-
-		// Create a reverse proxy
-		proxy := httputil.NewSingleHostReverseProxy(targetURL)
-
-		// Forward the request to the target server
-		proxy.ServeHTTP(w, r)
-	})
-
-	// Start the HTTP server on a specific port
-	if err := http.ListenAndServe(loadbalancer.ip+":"+loadbalancer.port, nil); err != nil {
+	l, err := net.Listen("tcp", loadbalancer.ip+":"+loadbalancer.port)
+	if err != nil {
 		log.Fatalln(err)
-		panic(err)
 	}
+	defer l.Close()
+
+	conn, err := l.Accept()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	go loadbalancer.Forward(conn)
 
 }
