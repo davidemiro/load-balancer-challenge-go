@@ -3,7 +3,7 @@ package loadBalancer
 type LoadBalancer interface {
 	Start(balancer LoadBalancer)
 	Forward()
-	Backward()
+	GetNode() string
 	AddNode(address string)
 }
 
