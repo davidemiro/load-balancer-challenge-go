@@ -2,8 +2,7 @@ package server
 
 import (
 	"fmt"
-	"log"
-	"net/http"
+	"net"
 )
 
 type Server struct {
@@ -21,11 +20,25 @@ func (server *Server) NewServer(name string, ip string, port string) {
 }
 
 func (server *Server) Start() {
-	server.handler = new(HttpHandler)
-	server.handler.NewHttpHandler(server.name)
-	log.Printf("Starting server %s at port %s and address %s\n", server.name, server.port, server.ip)
-	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", server.ip, server.port), server.handler); err != nil {
-		log.Fatalln(err)
+
+	listener, err := net.Listen("tcp", server.ip+":"+server.port)
+	if err != nil {
+		fmt.Println("[ERROR] starting server: " + err.Error())
+	}
+
+	defer listener.Close()
+
+	fmt.Println("[LISTENING] on port " + server.port)
+
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("[ERROR] Accepting connection:", err)
+			continue
+		}
+
+		conn.Write([]byte("Hello world!\n I am " + server.name))
+
 	}
 
 }

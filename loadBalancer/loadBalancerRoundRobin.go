@@ -1,6 +1,7 @@
 package loadBalancer
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"sync"
@@ -46,6 +47,7 @@ func (loadbalancer *LoadBalancerRoundRobin) AddNode(addr string) *LoadBalancerEr
 func (loadbalancer *LoadBalancerRoundRobin) Forward(conn net.Conn) error {
 	b := make([]byte, 1024)
 	addr := loadbalancer.GetNode()
+	fmt.Println(addr)
 	nodeConn, err := net.Dial("tcp", addr)
 	if err != nil {
 		panic(err)
@@ -105,6 +107,7 @@ func (loadbalancer *LoadBalancerRoundRobin) Start() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
 	defer l.Close()
 	for {
 

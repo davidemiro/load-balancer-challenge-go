@@ -1,6 +1,7 @@
 package main
 
 import (
+	"LoadBalancer/client"
 	"LoadBalancer/loadBalancer"
 	"LoadBalancer/server"
 )
@@ -15,17 +16,18 @@ func main() {
 
 	//create a new handler
 
-	go StartServer("S1", "127.0.0.2", "8081")
-
-	go StartServer("S2", "127.0.0.3", "8081")
-
 	loadBalancer := new(loadBalancer.LoadBalancerRoundRobin)
-	loadBalancer.NewLoadBalancer("LB", "127.0.0.1", "8080")
-	loadBalancer.AddNode("127.0.0.2:8081")
-	loadBalancer.AddNode("127.0.0.3:8081")
+	loadBalancer.NewLoadBalancer("LB", "127.0.0.1", "8082")
+	go loadBalancer.Start()
 
-	loadBalancer.Start()
+	go StartServer("S1", "127.0.0.1", "8084")
 
-	select {}
+	go StartServer("S2", "127.0.0.1", "8083")
+
+	loadBalancer.AddNode("127.0.0.1:8082")
+	loadBalancer.AddNode("127.0.0.1:8083")
+
+	client.StartClient()
+	client.StartClient()
 
 }
