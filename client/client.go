@@ -1,24 +1,28 @@
 package client
 
 import (
-	"fmt"
+	"log"
 	"net"
 )
 
-func StartClient() {
-	conn, err := net.Dial("tcp", "127.0.0.1:8082")
+func StartClient(name string, addr string) {
 
-	fmt.Println("Start Client")
+	conn, err := net.Dial("tcp", addr)
+
+	log.SetPrefix(name + " ")
+
+	log.Println("Start Client")
 	if err != nil {
 		panic(err)
 	}
 
 	defer conn.Close()
-	buffer := make([]byte, 1024)
+	conn.Write([]byte("I am a client"))
 
+	buffer := make([]byte, 1024)
 	conn.Read(buffer)
 	message := string(buffer)
 
-	fmt.Println(message)
+	log.Println(message)
 
 }

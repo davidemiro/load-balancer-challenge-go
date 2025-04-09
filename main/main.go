@@ -17,17 +17,17 @@ func main() {
 	//create a new handler
 
 	loadBalancer := new(loadBalancer.LoadBalancerRoundRobin)
-	loadBalancer.NewLoadBalancer("LB", "127.0.0.1", "8082")
+	loadBalancer.NewLoadBalancer("LB", "127.0.10.2", "8082")
 	go loadBalancer.Start()
 
-	go StartServer("S1", "127.0.0.1", "8084")
+	go StartServer("S1", "127.0.0.2", "8082")
 
-	go StartServer("S2", "127.0.0.1", "8083")
+	go StartServer("S2", "127.0.0.3", "8082")
 
-	loadBalancer.AddNode("127.0.0.1:8082")
-	loadBalancer.AddNode("127.0.0.1:8083")
+	loadBalancer.AddNode("127.0.0.2:8082")
+	loadBalancer.AddNode("127.0.0.3:8082")
 
-	client.StartClient()
-	client.StartClient()
+	client.StartClient("C1", "127.0.10.2:8082")
+	client.StartClient("C2", "127.0.10.2:8082")
 
 }

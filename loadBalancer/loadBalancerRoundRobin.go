@@ -1,7 +1,6 @@
 package loadBalancer
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"sync"
@@ -35,10 +34,10 @@ func (loadbalancer *LoadBalancerRoundRobin) AddNode(addr string) *LoadBalancerEr
 	loadbalancer.mu.Lock()
 	defer loadbalancer.mu.Unlock()
 
-	loadbalancer.addrsMap[addr] = false
+	loadbalancer.addrsMap[addr] = true
 	loadbalancer.addrs = append(loadbalancer.addrs, addr)
 
-	loadbalancer.nAddrs += 1
+	loadbalancer.nAddrs = loadbalancer.nAddrs + 1
 
 	return nil
 
@@ -47,7 +46,7 @@ func (loadbalancer *LoadBalancerRoundRobin) AddNode(addr string) *LoadBalancerEr
 func (loadbalancer *LoadBalancerRoundRobin) Forward(conn net.Conn) error {
 	b := make([]byte, 1024)
 	addr := loadbalancer.GetNode()
-	fmt.Println(addr)
+	log.Println("[FORWARDING] TO ", addr)
 	nodeConn, err := net.Dial("tcp", addr)
 	if err != nil {
 		panic(err)
@@ -96,7 +95,7 @@ func livenessProbe(addr string) bool {
 	// Close the connection after establishing it
 	defer conn.Close()
 
-	log.Println("Successfully connected to " + addr + "\n")
+	log.Println("[LIVENESS PROBE] Successfully connected to ", addr)
 	return true
 
 }

@@ -1,7 +1,7 @@
 package server
 
 import (
-	"fmt"
+	"log"
 	"net"
 )
 
@@ -16,6 +16,7 @@ func (server *Server) NewServer(name string, ip string, port string) {
 	server.name = name
 	server.ip = ip
 	server.port = port
+	log.SetPrefix(server.name + " ")
 
 }
 
@@ -23,21 +24,26 @@ func (server *Server) Start() {
 
 	listener, err := net.Listen("tcp", server.ip+":"+server.port)
 	if err != nil {
-		fmt.Println("[ERROR] starting server: " + err.Error())
+		log.Println("[ERROR] starting server: " + err.Error())
 	}
 
 	defer listener.Close()
 
-	fmt.Println("[LISTENING] on port " + server.port)
+	log.Println("[LISTENING] on port " + server.port)
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Println("[ERROR] Accepting connection:", err)
+			log.Println("[ERROR] Accepting connection:", err)
 			continue
 		}
 
-		conn.Write([]byte("Hello world!\n I am " + server.name))
+		buffer := make([]byte, 1024)
+		conn.Read(buffer)
+
+		log.Println("[MESSAGE]: " + string(buffer))
+
+		conn.Write([]byte("Hello world! I am " + server.name))
 
 	}
 
